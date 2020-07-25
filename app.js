@@ -21,7 +21,21 @@ var budgetController = (function(){
         totals:{
             exp:0,
             inc:0
-        }
+        },
+
+        budget: 0,
+        
+        percentage: -1
+    };
+
+    var calculateTotal = function(type){
+        var sum = 0;
+
+        data.allItems[type].map(item=>{
+            sum += item.value;
+        });
+
+        data.totals[type] = sum;
     };
 
     return {
@@ -44,6 +58,31 @@ var budgetController = (function(){
             return newItem;
         },
 
+        calculateBudget: function(){
+
+            calculateTotal('exp');
+
+            calculateTotal('inc');
+
+            data.budget = data.totals.inc - data.totals.exp;
+            
+            if(data.totals.inc > 0){
+                data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+            } else{
+                data.percentage= -1;
+            }
+             
+        },
+
+        getBudget: function(){
+            return{
+                budget:data.budget,
+                totalincome: data.totals.inc,
+                totalexpense: data.totals.exp,
+                percentage:data.percentage
+            }
+        },
+
         testing : function(){
             console.log(data);
         }
@@ -64,7 +103,11 @@ var UIController = (function(){
         inputValue : ".add__value",
         inputButton: ".add__btn",
         income:".income__list",
-        expenses:".expenses__list"
+        expenses:".expenses__list",
+        budgetLabel: ".budget__value",
+        incomeLabel: ".budget__income--value",
+        expensesLabel: ".budget__expenses--value",
+        percentageLabel: ".budget__expenses--percentage"
     }
 
     return {
@@ -72,7 +115,7 @@ var UIController = (function(){
             return{
                 type:document.querySelector(DomString.inputType).value,
                 description:document.querySelector(DomString.inputDescription).value,
-                value:document.querySelector(DomString.inputValue).value
+                value:parseFloat(document.querySelector(DomString.inputValue).value)
             }
         },
 
@@ -94,6 +137,33 @@ var UIController = (function(){
             document.querySelector(element).insertAdjacentHTML("beforeend",newHtml);
         },
         
+        clearFields: function(){
+            var fields, fieldsArr;
+
+            fields = document.querySelectorAll(`${DomString.inputDescription},${DomString.inputValue}`);
+
+            fieldsArr =Array.prototype.slice.call(fields);
+
+            fieldsArr.map(item=>{
+                item.value="";
+            })
+
+            fieldsArr[0].focus();
+        },
+
+        displayBudget: function(obj){
+
+            document.querySelector(DomString.budgetLabel).textContent=obj.budget;
+            document.querySelector(DomString.incomeLabel).textContent=obj.totalincome;
+            document.querySelector(DomString.expensesLabel).textContent=obj.totalexpense;
+            
+            if(obj.percentage > 0){
+                document.querySelector(DomString.percentageLabel).textContent = `${obj.percentage}%`;
+            } else{
+                document.querySelector(DomString.percentageLabel).textContent = "---";
+            }
+        },
+
         getDomString:function(){
             return DomString;
         }
@@ -120,20 +190,39 @@ var Controller = (function(budgetControl,UIControl){
             }
         })
 
+    };
+
+    var updateBudget = function(){
+
+        budgetControl.calculateBudget();
+        
+        var budget = budgetControl.getBudget();
+        
+        UIControl.displayBudget(budget);
+
+        //console.log(budget);
     }
 
     var control = function () {
 
         var input = UIControl.getInput();
 
-        var newitem = budgetControl.allItem(input.type,input.description,input.value);
-        
-        UIControl.addListItem(newitem,input.type);
+        if(input.description!=="" && !isNaN(input.value) && input.value>0){
+            
+            var newitem = budgetControl.allItem(input.type, input.description, input.value);
+
+            UIControl.addListItem(newitem, input.type);
+
+            UIControl.clearFields();
+            
+            updateBudget();
+
+        }
         
         //console.log(newitem);
 
         //console.log("It's works");
-    }
+    };
 
 
     return {
