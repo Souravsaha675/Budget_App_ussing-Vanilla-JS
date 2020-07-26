@@ -156,7 +156,34 @@ var UIController = (function(){
         percentageLabel: ".budget__expenses--percentage",
         container: ".container",
         expensesPercentage : ".item__percentage"
-    }
+    };
+
+    var formatNumber = function(num,type) {
+
+        var numsplit,int,dec,type,sign;
+
+        num = Math.abs(num);
+
+        num = num.toFixed(2);
+
+        numsplit = num.split(".");
+
+        int = numsplit[0];
+
+        if(int.length>3){
+            int = int.substr(0,int.length-3)+","+int.substr(int.length-3,3);
+        }   
+
+        dec = numsplit[1];
+        if(type==="exp"){
+            sign="-"
+        } else{
+            sign="+"
+        }
+
+        return sign+ " " +int+"."+dec;
+
+    };
 
     return {
         getInput:function(){
@@ -180,7 +207,7 @@ var UIController = (function(){
 
             newHtml=html.replace('%id%',obj.id);
             newHtml=newHtml.replace('%description%',obj.description);
-            newHtml=newHtml.replace('%value%',obj.value)
+            newHtml=newHtml.replace('%value%',formatNumber(obj.value,type));
             
             document.querySelector(element).insertAdjacentHTML("beforeend",newHtml);
         },
@@ -208,9 +235,13 @@ var UIController = (function(){
 
         displayBudget: function(obj){
 
-            document.querySelector(DomString.budgetLabel).textContent=obj.budget;
-            document.querySelector(DomString.incomeLabel).textContent=obj.totalincome;
-            document.querySelector(DomString.expensesLabel).textContent=obj.totalexpense;
+            var type;
+
+            obj.budget >=0 ? type ="inc" :type ="exp";
+
+            document.querySelector(DomString.budgetLabel).textContent=formatNumber(obj.budget,type);
+            document.querySelector(DomString.incomeLabel).textContent=formatNumber(obj.totalincome,"inc");
+            document.querySelector(DomString.expensesLabel).textContent=formatNumber(obj.totalexpense,"exp");
             
             if(obj.percentage > 0){
                 document.querySelector(DomString.percentageLabel).textContent = `${obj.percentage}%`;
